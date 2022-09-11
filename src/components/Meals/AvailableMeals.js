@@ -1,50 +1,66 @@
 import Card from "../UI/Card";
 import MealItem from "./MealItem/MealItem";
 import classes from "./AvailableMeals.module.css";
-
-const DUMMY_MEALS = [
-  {
-    id: 1,
-    name: "Sushi",
-    description: "Finest fish and veggies",
-    price: 22.99,
-  },
-  {
-    id: 2,
-    name: "Schnitzel",
-    description: "A german specialty!",
-    price: 16.5,
-  },
-  {
-    id: 3,
-    name: "Barbecue Burger",
-    description: "American, raw, meaty",
-    price: 12.99,
-  },
-  {
-    id: 4,
-    name: "Green Bowl",
-    description: "Healthy...and green...",
-    price: 18.99,
-  },
-];
+import useHttp from "../../hooks/use-http";
+import { useEffect, useState } from "react";
 
 const AvailableMeals = () => {
-  const mealsList = DUMMY_MEALS.map((meal) => (
+  const [meals, setMeals] = useState([]);
+  const { isLoading, error, sendRequest } = useHttp();
+  useEffect(() => {
+    const responseHandler = (responseData) => {
+      const loadedMeals = [];
+
+      for (const key in responseData) {
+        loadedMeals.push({
+          id: key,
+          name: responseData[key].name,
+          description: responseData[key].description,
+          price: responseData[key].price,
+        });
+      }
+
+      setMeals(loadedMeals);
+    };
+    sendRequest(
+      {
+        url: "https://react-http-311f1-default-rtdb.firebaseio.com/Meals.json",
+      },
+      responseHandler
+    );
+  }, []);
+
+  const mealsList = meals.map((meal) => (
     <MealItem
       key={meal.id}
-      id = {meal.id}
+      id={meal.id}
       name={meal.name}
       description={meal.description}
       price={meal.price}
     />
   ));
 
+  const Loading = (
+    <section className={classes.loading}>
+      <p>Loading...</p>
+    </section>
+  );
+
+  const Error = (
+    <section className={classes.loading}>
+      <p>Something went Wrong!</p>
+    </section>
+  );
+
   return (
     <section className={classes.meals}>
-      <Card>
-        <ul>{mealsList}</ul>
-      </Card>
+      {isLoading && Loading}
+      {error && Error}
+      {meals.length > 0 && (
+        <Card>
+          <ul>{mealsList}</ul>
+        </Card>
+      )}
     </section>
   );
 };
